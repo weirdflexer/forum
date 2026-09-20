@@ -1,0 +1,198 @@
+package forum // import "."
+
+
+CONSTANTS
+
+const topicSelect = `SELECT t.id,t.section_id,s.title,s.slug,s.is_archived,t.title,t.status,t.created_at,t.last_activity_at,
+ (SELECT count(*) FROM posts p WHERE p.topic_id=t.id),
+ COALESCE((SELECT left(p.body,200) FROM posts p WHERE p.topic_id=t.id AND p.status='visible' ORDER BY p.number LIMIT 1),'')
+ FROM topics t JOIN sections s ON s.id=t.section_id `
+
+VARIABLES
+
+var loginPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]{3,40}$`)
+var slugPattern = regexp.MustCompile(`^[a-z0-9-]{2,40}$`)
+var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+FUNCTIONS
+
+func CreateStaff(ctx context.Context, db *pgxpool.Pool, login, password, role string) error
+func HashPassword(password string) (string, error)
+func Migrate(ctx context.Context, db *pgxpool.Pool) error
+func Open(ctx context.Context, url string) (*pgxpool.Pool, error)
+func Seed(ctx context.Context, db *pgxpool.Pool) error
+func VerifyPassword(password, encoded string) bool
+func decode(w http.ResponseWriter, r *http.Request, dst any) error
+func digest(s string) string
+func idemKey(r *http.Request) (string, error)
+func pagination(r *http.Request) (int, error)
+func problem(status int, code, message string) error
+func replay(w http.ResponseWriter, r *http.Request, tx pgx.Tx, sid, key, hash string) (bool, error)
+func requestHash(r *http.Request, v any) string
+func respond(w http.ResponseWriter, status int, v any) error
+func saveReply(r *http.Request, tx pgx.Tx, sid, key, hash string, result any) error
+func token() string
+func validText(s string, min, max int) bool
+func validateSection(in *sectionInput) error
+
+TYPES
+
+type Config struct {
+	NetworkWriteLimit, NetworkSessionLimit int
+	Origin, Secret, StaticDir              string
+	SecureCookies                          bool
+}
+
+type Post struct {
+	ID        string    `json:"id"`
+	Number    int       `json:"number"`
+	Body      string    `json:"body"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	IsMine    bool      `json:"is_mine"`
+}
+
+type Section struct {
+	ID          string `json:"id"`
+	Slug        string `json:"slug"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Archived    bool   `json:"is_archived"`
+	TopicCount  int    `json:"topic_count"`
+}
+
+type Server struct {
+	db        *pgxpool.Pool
+	cfg       Config
+	limits    limiter
+	dummyHash string
+}
+
+func New(db *pgxpool.Pool, cfg Config) *Server
+
+func (s *Server) Cleanup(ctx context.Context)
+
+func (s *Server) Handler() http.Handler
+
+func (s *Server) addStaff(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) changeRole(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) changeTopic(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) cookie(w http.ResponseWriter, name, value string, maxAge int)
+
+func (s *Server) createPost(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) createReport(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) createSection(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) createSession(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) createTopic(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) csrf(raw string) string
+
+func (s *Server) decideReport(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) deletePost(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) endSession(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) fail(w http.ResponseWriter, r *http.Request, err error)
+
+func (s *Server) health(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) identify(r *http.Request, st *requestState) error
+
+func (s *Server) listStaff(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) lockSession(r *http.Request, tx pgx.Tx, id string) error
+
+func (s *Server) middleware(next http.Handler) http.Handler
+
+func (s *Server) modActions(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) modReports(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) networkLimit(w http.ResponseWriter, r *http.Request, group string, max int) error
+
+func (s *Server) posts(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) require(r *http.Request, role string) (identity, error)
+
+func (s *Server) sections(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) serveFrontend(w http.ResponseWriter, r *http.Request)
+
+func (s *Server) sessionInfo(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) sessionLimit(w http.ResponseWriter, r *http.Request, tx pgx.Tx, id, action string, max, seconds int) error
+
+func (s *Server) staffLogin(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) staffLogout(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) topics(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) updateSection(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) wrap(h handler) http.HandlerFunc
+
+type Topic struct {
+	ID           string    `json:"id"`
+	SectionID    string    `json:"section_id"`
+	SectionTitle string    `json:"section_title"`
+	SectionSlug  string    `json:"section_slug"`
+	Archived     bool      `json:"section_archived"`
+	Title        string    `json:"title"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	LastActivity time.Time `json:"last_activity_at"`
+	PostCount    int       `json:"post_count"`
+	Preview      string    `json:"preview"`
+}
+
+func scanTopic(row pgx.Row) (Topic, error)
+
+type apiError struct {
+	Status    int    `json:"-"`
+	Code      string `json:"code"`
+	Message   string `json:"message"`
+	RequestID string `json:"request_id,omitempty"`
+}
+
+func (e *apiError) Error() string
+
+type bucket struct {
+	count int
+	reset time.Time
+}
+
+type handler func(http.ResponseWriter, *http.Request) error
+
+type identity struct{ ID, Raw, Role, Login string }
+
+type limiter struct {
+	sync.Mutex
+	items map[string]bucket
+}
+
+func (l *limiter) allow(key string, max int, now time.Time) int
+
+type requestState struct {
+	Anon, Staff identity
+	RequestID   string
+}
+
+func state(r *http.Request) *requestState
+
+type sectionInput struct {
+	Slug        string `json:"slug"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Archived    bool   `json:"is_archived"`
+}
+
+type stateKey struct{}

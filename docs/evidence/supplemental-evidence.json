@@ -1,0 +1,111 @@
+{
+  "date": "2026-09-20T22:00:06.929Z",
+  "checks": [
+    {
+      "name": "TC-04 title4",
+      "passed": true,
+      "detail": "HTTP 400, expected 400"
+    },
+    {
+      "name": "TC-04 title5",
+      "passed": true,
+      "detail": "HTTP 201, expected 201"
+    },
+    {
+      "name": "TC-04 title120",
+      "passed": true,
+      "detail": "HTTP 201, expected 201"
+    },
+    {
+      "name": "TC-04 title121",
+      "passed": true,
+      "detail": "HTTP 400, expected 400"
+    },
+    {
+      "name": "TC-04 body0",
+      "passed": true,
+      "detail": "HTTP 400, expected 400"
+    },
+    {
+      "name": "TC-04 body1",
+      "passed": true,
+      "detail": "HTTP 201, expected 201"
+    },
+    {
+      "name": "TC-04 body5000",
+      "passed": true,
+      "detail": "HTTP 201, expected 201"
+    },
+    {
+      "name": "TC-04 body5001",
+      "passed": true,
+      "detail": "HTTP 400, expected 400"
+    },
+    {
+      "name": "TC-02 pagination",
+      "passed": true,
+      "detail": "20 + 5 messages"
+    },
+    {
+      "name": "TC-02 visibility",
+      "passed": true,
+      "detail": "hidden/deleted text absent"
+    },
+    {
+      "name": "TC-02 numbering",
+      "passed": true,
+      "detail": "post numbers 1 through 25 without duplicates"
+    },
+    {
+      "name": "TC-07 search/filter",
+      "passed": true,
+      "detail": "matching topic in selected section"
+    },
+    {
+      "name": "TC-07 empty",
+      "passed": true,
+      "detail": "empty result"
+    },
+    {
+      "name": "TC-07 hidden",
+      "passed": true,
+      "detail": "hidden body not searchable"
+    },
+    {
+      "name": "TC-11 report 1",
+      "passed": true,
+      "detail": "HTTP 201"
+    },
+    {
+      "name": "TC-11 report 2",
+      "passed": true,
+      "detail": "HTTP 201"
+    },
+    {
+      "name": "TC-11 report 3",
+      "passed": true,
+      "detail": "HTTP 201"
+    },
+    {
+      "name": "TC-11 report 4",
+      "passed": true,
+      "detail": "HTTP 429"
+    },
+    {
+      "name": "TC-11 Retry-After",
+      "passed": true,
+      "detail": "positive retry delay"
+    }
+  ],
+  "screenshots": [
+    "screen_catalog",
+    "screen_form",
+    "screen_topic",
+    "screen_report",
+    "screen_moderation",
+    "screen_audit",
+    "screen_admin",
+    "screen_mobile"
+  ],
+  "success": true
+}
