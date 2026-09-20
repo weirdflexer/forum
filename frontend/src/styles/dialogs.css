@@ -1,0 +1,80 @@
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #264637;
+  color: #f2f7eb;
+  border: 1px solid #506949;
+  padding: 14px 18px;
+  border-radius: 10px;
+  z-index: 60;
+  box-shadow: 0 10px 40px #182c2522;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 30px);
+}
+.toast button {
+  padding: 0 0 0 12px;
+  border: 0;
+  background: none;
+  color: #c1d3af;
+}
+.toast > svg {
+  color: #d3dca7;
+}
+dialog {
+  border: 1px solid #dfe7d6;
+  border-radius: 15px;
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100vh - 40px);
+  padding: 27px;
+  box-shadow: 0 30px 120px #10251944;
+  color: #30482a;
+}
+dialog::backdrop {
+  background: #1b2e2980;
+  backdrop-filter: blur(3px);
+}
+.dialog-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 18px;
+}
+.dialog-heading h2 {
+  font-size: 22px;
+  margin: 0;
+  font-weight: 550;
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 23px;
+}
+.muted-text {
+  color: #8a9a7d;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.optional {
+  font-size: 10px;
+  color: #a9b39d;
+  font-weight: 400;
+  margin-left: 5px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

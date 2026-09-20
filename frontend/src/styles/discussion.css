@@ -1,0 +1,130 @@
+.discussion-page {
+  max-width: 850px;
+  margin: auto;
+}
+.discussion-heading {
+  position: relative;
+  margin: 0 0 26px;
+}
+.discussion-heading h1 {
+  font-size: 32px;
+  line-height: 1.25;
+  margin: 14px 0;
+  overflow-wrap: anywhere;
+}
+.discussion-heading > .topic-meta {
+  font-size: 11px;
+  color: #8e9b84;
+}
+.closed-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #9b947c;
+  font-size: 10px;
+}
+.mod-topic {
+  margin-top: 17px;
+}
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.post {
+  background: #fff;
+  border: 1px solid #e2e8dc;
+  border-radius: 12px;
+  padding: 24px 27px;
+}
+.post.first-post {
+  border-top: 3px solid #aec59c;
+}
+.post header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.post header strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.post header time {
+  display: block;
+  font-size: 9px;
+  color: #a0ac94;
+  margin-top: 3px;
+}
+.post-number {
+  margin-left: auto;
+  color: #a3af97;
+  font-size: 10px;
+}
+.post-body {
+  margin: 22px 0 8px;
+  color: #516348;
+  font-size: 14px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.post footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 18px;
+  margin-top: 17px;
+}
+.text-button {
+  border: 0;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #98a78a;
+  padding: 5px 0;
+  font-size: 10px;
+}
+.text-button:hover {
+  color: #4e7339;
+}
+.mine-tag {
+  background: #e9f2e2;
+  color: #7a9667;
+  font-size: 8px;
+  margin-left: 5px;
+  border-radius: 4px;
+  padding: 3px 5px;
+  font-weight: 400;
+}
+.removed {
+  color: #acb59e;
+  font-style: italic;
+  font-size: 12px;
+}
+.reply-form {
+  margin-top: 25px;
+}
+.reply-form h2 {
+  font-size: 17px;
+  font-weight: 500;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.reply-form h2 svg {
+  color: #8ba476;
+}
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #f0f3e9;
+  border: 1px solid #e2e8d6;
+  color: #82916e;
+  border-radius: 9px;
+  padding: 17px;
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 20px 0;
+}

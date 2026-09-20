@@ -120,8 +120,8 @@ backend/
   internal/forum/          HTTP-слой, транзакции публикаций/модерации, сессии, тесты
   migrations/              встроенные версионированные SQL-миграции
 frontend/
-  src/                     React, типы API, стили, формы и черновики
- tests/                   Playwright сценарии
+  src/                     страницы по features, общие компоненты, API, хуки и стили
+  tests/                   Playwright сценарии и общие шаги
 scripts/                   Podman, запуск, тесты, копирование/восстановление
 docs/openapi.json         контракт API OpenAPI 3.0.3
 docs/TESTING.md            фактические проверки и оставшаяся приёмка
@@ -129,6 +129,8 @@ tests/load.js             нагрузочный сценарий k6
 ```
 
 Устройство бэкенда и границы транзакций: [docs/BACKEND.md](docs/BACKEND.md).
+
+Страницы, хуки и стили фронтенда: [docs/FRONTEND.md](docs/FRONTEND.md).
 
 API: [docs/openapi.json](docs/openapi.json). Запросы записи требуют `Origin`. Анонимная сессия создаётся `POST /api/v1/sessions`, служебная — `POST /api/v1/staff/session`. Оба ответа содержат соответствующий `csrf_token`; в остальных изменяющих запросах он передаётся как `X-CSRF-Token`. Публикации также требуют `Idempotency-Key`. Формат ошибки: `code`, `message`, `request_id`; `Retry-After` приходит заголовком при лимите.
 

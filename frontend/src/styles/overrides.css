@@ -1,0 +1,138 @@
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* Readable secondary text on light surfaces; small labels meet the same contrast target. */
+.page-heading p,
+.topbar-left,
+.nav-label,
+.nav-count,
+.sidebar-footer,
+.brand-sub,
+.quiet-card p,
+.topic-row p,
+.topic-meta,
+.topic-bottom,
+.author,
+.last-activity,
+.section-mini small,
+.privacy-note,
+.page-footer,
+.muted-text,
+.counter,
+.field-help,
+.optional,
+.info-lead,
+.prose p,
+.rules-list p,
+.form-bottom p,
+.form-intro p,
+.post header time,
+.post-number,
+.text-button,
+.removed,
+.report-top time,
+.audit-item small,
+.audit-item p,
+.admin-row p {
+  color: #687661;
+}
+.welcome p,
+.mini-label,
+.friendly-faces small {
+  color: #747750;
+}
+.search-box input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: #73826a;
+}
+.search-submit,
+.sort,
+.sort select {
+  color: #64765a;
+}
+.tag {
+  color: #4e7139;
+}
+.tag.tech {
+  color: #506584 !important;
+}
+.tag.study {
+  color: #816b36 !important;
+}
+.tag.life {
+  color: #92554e !important;
+}
+.tag.ideas {
+  color: #70588e !important;
+}
+.tag.general {
+  color: #527538 !important;
+}
+.notice {
+  color: #65774e;
+}
+.topic-row p {
+  font-size: 12px;
+}
+.topic-meta {
+  font-size: 10px;
+}
+.topic-bottom,
+.author {
+  font-size: 10px;
+}
+.rail-card p {
+  font-size: 11px;
+}
+.form-bottom p {
+  font-size: 11px;
+}
+.sidebar-footer {
+  font-size: 10px;
+}
+.page-footer {
+  font-size: 10px;
+}
+@media (max-width: 520px) {
+  .topic-row p {
+    font-size: 11px;
+  }
+  .topic-meta {
+    font-size: 9px;
+  }
+  .topic-bottom,
+  .author {
+    font-size: 9px;
+  }
+  .page-footer {
+    font-size: 9px;
+  }
+}
+.nav-item.not-selected.active[href="/"] {
+  background: transparent;
+  color: #65736c;
+}
+.nav-item.not-selected.active[href="/"] svg {
+  color: #86958a;
+}
+.icon-button.mobile-only {
+  display: none;
+}
+@media (max-width: 760px) {
+  .icon-button.mobile-only {
+    display: inline-flex;
+  }
+}
+.search-box input {
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+  border-radius: 0;
+}
