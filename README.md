@@ -146,7 +146,7 @@ API: [docs/openapi.json](docs/openapi.json). Запросы записи тре�
 
 ## Материалы практических работ
 
-Репозиторий: https://github.com/weirdflexer/forum, ветка `codex/forum-project`.
+Репозиторий: https://github.com/weirdflexer/forum, ветка `main`.
 
 - [Справочник Go-кода](docs/generated/go-code.txt) — результат `go doc -all -u ./internal/forum`; [локальная HTML-версия](docs/generated/index.html).
 - [Пользовательская вики](docs/wiki/Home.md) — чтение, публикация, модерация и частые вопросы; для локального просмотра откройте `docs/wiki/Home.html`.
