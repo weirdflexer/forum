@@ -1,4 +1,4 @@
-<!doctype html><html lang="ru"><meta charset="utf-8"><title>Документация кода Go</title><style>body{max-width:880px;margin:40px auto;padding:0 24px;font:18px/1.65 system-ui;color:#17362d}nav{margin-bottom:30px}a{color:#246854}h1{line-height:1.2}code,pre{background:#eff3f0}pre{padding:20px;overflow:auto;font-size:14px}</style><h1>Документация кода Go</h1><p>Сгенерировано 21.09.2026 стандартным инструментом go doc -all -u ./internal/forum. Исходный пакет forum версии 1.0.0.</p><pre>package forum // import &quot;.&quot;
+<!doctype html><html lang="ru"><meta charset="utf-8"><title>Документация кода Go</title><style>body{max-width:880px;margin:40px auto;padding:0 24px;font:18px/1.65 system-ui;color:#17362d}nav{margin-bottom:30px}a{color:#246854}h1{line-height:1.2}code,pre{background:#eff3f0}pre{padding:20px;overflow:auto;font-size:14px}</style><h1>Документация кода Go</h1><p>Сгенерировано 21.09.2026 стандартным инструментом go doc -all -u ./internal/forum. Пакет forum версии 1.0.0 после рефакторинга HTTP-слоя, публикаций и модерации.</p><pre>package forum // import &quot;forum/internal/forum&quot;
 
 
 CONSTANTS
@@ -27,13 +27,19 @@ func digest(s string) string
 func idemKey(r *http.Request) (string, error)
 func pagination(r *http.Request) (int, error)
 func problem(status int, code, message string) error
-func replay(w http.ResponseWriter, r *http.Request, tx pgx.Tx, sid, key, hash string) (bool, error)
-func requestHash(r *http.Request, v any) string
+func publishingError(w http.ResponseWriter, err error) error
+func requestHash(path string, value any) string
 func respond(w http.ResponseWriter, status int, v any) error
-func saveReply(r *http.Request, tx pgx.Tx, sid, key, hash string, result any) error
+func respondPublication[T any](w http.ResponseWriter, out publicationResult[T], err error) error
+func savePublication(ctx context.Context, tx pgx.Tx, sessionID, key, hash string, result any) error
+func sessionLimit(ctx context.Context, tx pgx.Tx, sessionID, action string, max, seconds int) error
+    Call only while holding the anonymous session row lock. The rate event rolls
+    back with the surrounding write if validation or publication fails.
+
 func token() string
 func validText(s string, min, max int) bool
 func validateSection(in *sectionInput) error
+func validateStaffCredentials(login, password, role string) error
 
 TYPES
 
@@ -42,6 +48,7 @@ type Config struct {
 	Origin, Secret, StaticDir              string
 	SecureCookies                          bool
 }
+    Config contains HTTP, security, and frontend settings for the forum.
 
 type Post struct {
 	ID        string    `json:&quot;id&quot;`
@@ -67,14 +74,28 @@ type Server struct {
 	limits    limiter
 	dummyHash string
 }
+    Server serves the forum API and its built frontend using a shared database
+    pool.
 
 func New(db *pgxpool.Pool, cfg Config) *Server
+    New constructs a server and applies the default per-network request limits.
 
 func (s *Server) Cleanup(ctx context.Context)
 
 func (s *Server) Handler() http.Handler
+    Handler assembles API routes, the frontend, and the shared request
+    middleware.
 
 func (s *Server) addStaff(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) applyReportDecision(ctx context.Context, staffID, reportID string, in reportDecisionInput) (string, error)
+    applyReportDecision serializes competing decisions on one report and commits
+    the post visibility change, report result and audit entry together.
+
+func (s *Server) beginAnonymousWrite(ctx context.Context, sessionID string) (pgx.Tx, error)
+    Every anonymous mutation first locks the session row, serializing
+    publication, rate-limit checks and duplicate-report checks for the same
+    visitor.
 
 func (s *Server) changeRole(w http.ResponseWriter, r *http.Request) error
 
@@ -106,9 +127,9 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) error
 
 func (s *Server) identify(r *http.Request, st *requestState) error
 
-func (s *Server) listStaff(w http.ResponseWriter, r *http.Request) error
+func (s *Server) insertSection(ctx context.Context, in sectionInput) (string, error)
 
-func (s *Server) lockSession(r *http.Request, tx pgx.Tx, id string) error
+func (s *Server) listStaff(w http.ResponseWriter, r *http.Request) error
 
 func (s *Server) middleware(next http.Handler) http.Handler
 
@@ -120,23 +141,43 @@ func (s *Server) networkLimit(w http.ResponseWriter, r *http.Request, group stri
 
 func (s *Server) posts(w http.ResponseWriter, r *http.Request) error
 
+func (s *Server) publishPost(ctx context.Context, req publicationRequest, topicID string, in createPostInput) (publicationResult[createdPost], error)
+
+func (s *Server) publishTopic(ctx context.Context, req publicationRequest, in createTopicInput) (publicationResult[createdTopic], error)
+
+func (s *Server) queryModerationActions(ctx context.Context, page int) ([]moderationAction, int, error)
+
+func (s *Server) queryModerationReports(ctx context.Context, status string, page int) ([]moderationReport, int, error)
+
+func (s *Server) queryStaff(ctx context.Context) ([]staffAccount, error)
+
+func (s *Server) removeOwnPost(ctx context.Context, sessionID, postID string) error
+
 func (s *Server) require(r *http.Request, role string) (identity, error)
 
 func (s *Server) sections(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) securityHeaders(w http.ResponseWriter)
 
 func (s *Server) serveFrontend(w http.ResponseWriter, r *http.Request)
 
 func (s *Server) sessionInfo(w http.ResponseWriter, r *http.Request) error
 
-func (s *Server) sessionLimit(w http.ResponseWriter, r *http.Request, tx pgx.Tx, id, action string, max, seconds int) error
+func (s *Server) setStaffRole(ctx context.Context, staffID, role string) error
+
+func (s *Server) setTopicStatus(ctx context.Context, staffID, topicID string, in topicStatusInput) error
 
 func (s *Server) staffLogin(w http.ResponseWriter, r *http.Request) error
 
 func (s *Server) staffLogout(w http.ResponseWriter, r *http.Request) error
 
+func (s *Server) submitReport(ctx context.Context, sessionID string, in createReportInput) (createdReport, error)
+
 func (s *Server) topics(w http.ResponseWriter, r *http.Request) error
 
 func (s *Server) updateSection(w http.ResponseWriter, r *http.Request) error
+
+func (s *Server) updateSectionRecord(ctx context.Context, id string, in sectionInput) error
 
 func (s *Server) wrap(h handler) http.HandlerFunc
 
@@ -170,6 +211,39 @@ type bucket struct {
 	reset time.Time
 }
 
+type createPostInput struct {
+	Body string `json:&quot;body&quot;`
+}
+
+type createReportInput struct {
+	PostID  string `json:&quot;post_id&quot;`
+	Reason  string `json:&quot;reason&quot;`
+	Comment string `json:&quot;comment&quot;`
+}
+
+type createTopicInput struct {
+	SectionID string `json:&quot;section_id&quot;`
+	Title     string `json:&quot;title&quot;`
+	Body      string `json:&quot;body&quot;`
+}
+    Keep the field order stable: normalized request JSON is part of persisted
+    idempotency hashes, including keys created before these named input types.
+
+type createdPost struct {
+	Number int    `json:&quot;number&quot;`
+	Page   int    `json:&quot;page&quot;`
+	PostID string `json:&quot;post_id&quot;`
+}
+
+type createdReport struct {
+	ReportID string `json:&quot;report_id&quot;`
+}
+
+type createdTopic struct {
+	FirstPostID string `json:&quot;first_post_id&quot;`
+	TopicID     string `json:&quot;topic_id&quot;`
+}
+
 type handler func(http.ResponseWriter, *http.Request) error
 
 type identity struct{ ID, Raw, Role, Login string }
@@ -181,12 +255,67 @@ type limiter struct {
 
 func (l *limiter) allow(key string, max int, now time.Time) int
 
+type moderationAction struct {
+	ID        string    `json:&quot;id&quot;`
+	Login     string    `json:&quot;login&quot;`
+	Action    string    `json:&quot;action&quot;`
+	Reason    string    `json:&quot;reason&quot;`
+	CreatedAt time.Time `json:&quot;created_at&quot;`
+	TopicID   string    `json:&quot;topic_id&quot;`
+}
+
+type moderationReport struct {
+	ID             string    `json:&quot;id&quot;`
+	PostID         string    `json:&quot;post_id&quot;`
+	Reason         string    `json:&quot;reason&quot;`
+	Comment        string    `json:&quot;comment&quot;`
+	Status         string    `json:&quot;status&quot;`
+	DecisionReason string    `json:&quot;decision_reason&quot;`
+	CreatedAt      time.Time `json:&quot;created_at&quot;`
+	Body           string    `json:&quot;body&quot;`
+	PostStatus     string    `json:&quot;post_status&quot;`
+	TopicID        string    `json:&quot;topic_id&quot;`
+	Number         int       `json:&quot;number&quot;`
+	Title          string    `json:&quot;topic_title&quot;`
+}
+
+type publicationRequest struct {
+	SessionID string
+	Key       string
+	Path      string
+}
+
+type publicationResult[T any] struct {
+	Value  T
+	Replay *savedPublication
+}
+
+func publishOnce[T any](ctx context.Context, s *Server, req publicationRequest, hash string, create func(pgx.Tx) (T, error)) (publicationResult[T], error)
+    publishOnce keeps the mutation, rate event and saved reply in one
+    transaction. Replays are read after locking the session and before checking
+    mutable target state or limits, so retrying an accepted write never performs
+    it again.
+
+type reportDecisionInput struct {
+	Decision string `json:&quot;decision&quot;`
+	Reason   string `json:&quot;reason&quot;`
+}
+
+func (in *reportDecisionInput) validate() error
+
 type requestState struct {
 	Anon, Staff identity
 	RequestID   string
 }
 
 func state(r *http.Request) *requestState
+
+type savedPublication struct {
+	Status int
+	Body   json.RawMessage
+}
+
+func loadPublication(ctx context.Context, tx pgx.Tx, sessionID, key, hash string) (*savedPublication, error)
 
 type sectionInput struct {
 	Slug        string `json:&quot;slug&quot;`
@@ -195,6 +324,27 @@ type sectionInput struct {
 	Archived    bool   `json:&quot;is_archived&quot;`
 }
 
+type sessionRateLimitError struct {
+	RetryAfter int
+	cause      error
+}
+
+func (e *sessionRateLimitError) Error() string
+
+func (e *sessionRateLimitError) Unwrap() error
+
+type staffAccount struct {
+	ID    string `json:&quot;id&quot;`
+	Login string `json:&quot;login&quot;`
+	Role  string `json:&quot;role&quot;`
+}
+
 type stateKey struct{}
 
+type topicStatusInput struct {
+	Status string `json:&quot;status&quot;`
+	Reason string `json:&quot;reason&quot;`
+}
+
+func (in *topicStatusInput) validate() error
 </pre></html>
