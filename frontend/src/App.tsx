@@ -1,460 +1,93 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
-import type { FormEvent, ReactNode } from "react";
 import {
-  Link,
-  NavLink,
-  Route,
-  Routes,
-  useLocation,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router-dom";
-import {
-  ArrowDownWideNarrow,
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  CircleHelp,
-  Code2,
-  Compass,
-  Flag,
-  Hash,
-  Heart,
-  Lightbulb,
-  LockKeyhole,
-  LogOut,
-  Menu,
-  MessageCircle,
-  MessagesSquare,
-  Plus,
-  Search,
-  Send,
-  Settings2,
-  Shield,
-  ShieldCheck,
-  Sparkles,
-  Trash2,
-  X,
+ArrowDownWideNarrow,
+ArrowLeft,
+ArrowRight,
+Check,
+ChevronRight,
+Compass,
+Flag,
+LockKeyhole,
+LogOut,
+MessageCircle,
+Plus,
+Search,
+Send,
+Settings2,
+Shield,
+ShieldCheck,
+Sparkles,
+Trash2,
+X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import type { FormEvent } from "react";
+import { useEffect,useRef,useState } from "react";
 import {
-  api,
-  countLabel,
-  date,
-  message,
-  mutation,
-  reasons,
-  relative,
-} from "./api";
+Link,
+NavLink,
+Route,
+Routes,
+useLocation,
+useNavigate,
+useParams,
+useSearchParams,
+} from "react-router-dom";
+import { api,mutation } from "./api/client";
 import type {
-  Action,
-  Discussion,
-  Page,
-  Post,
-  Report,
-  Section,
-  Session,
-  Staff,
-  Topic,
-} from "./api";
-import { clearSubmission, submissionKey, useDraft, useLoad } from "./hooks";
+Action,
+Discussion,
+Page,
+Post,
+Report,
+Section,
+Session,
+Staff,
+Topic,
+} from "./api/types";
+import { AppProvider,useApp } from "./app/AppProvider";
+import { Count } from "./components/Count";
+import { Empty,ErrorBox,Loading } from "./components/Feedback";
+import { Modal } from "./components/Modal";
+import { Pager } from "./components/Pager";
+import { SectionIcon } from "./components/SectionIcon";
+import { reasons } from "./features/moderation/constants";
+import { useDraft } from "./hooks/useDraft";
+import { useLoad } from "./hooks/useLoad";
+import { AppLayout } from "./layouts/AppLayout";
+import { message } from "./lib/errors";
+import { countLabel,date,relative } from "./lib/format";
+import { clearSubmission,submissionKey } from "./lib/submissions";
 
-type AppContext = {
-  session: Session;
-  setSession: (s: Session) => void;
-  ensureSession: () => Promise<Session>;
-  sections: Section[];
-  refresh: () => void;
-  version: number;
-  notify: (text: string) => void;
-};
-const Context = createContext<AppContext>(null!);
-const useApp = () => useContext(Context);
-const icons: Record<string, LucideIcon> = {
-  general: MessagesSquare,
-  tech: Code2,
-  study: BookOpen,
-  life: Heart,
-  ideas: Lightbulb,
-};
-function SectionIcon({ slug, size = 19 }: { slug: string; size?: number }) {
-  const Icon = icons[slug] ?? Hash;
-  return <Icon size={size} aria-hidden="true" />;
-}
-function Empty({
-  title,
-  children,
-  icon: Icon = MessagesSquare,
-}: {
-  title: string;
-  children?: ReactNode;
-  icon?: LucideIcon;
-}) {
-  return (
-    <div className="empty">
-      <span className="empty-icon">
-        <Icon size={28} />
-      </span>
-      <h3>{title}</h3>
-      <p>{children}</p>
-    </div>
-  );
-}
-function ErrorBox({ text, retry }: { text: string; retry?: () => void }) {
-  return text ? (
-    <div className="error" role="alert">
-      <CircleHelp size={18} />
-      <div>
-        {text}
-        {retry && <button onClick={retry}>Повторить</button>}
-      </div>
-    </div>
-  ) : null;
-}
-function Loading() {
-  return (
-    <div className="loading" role="status">
-      <span />
-      Загружаем обсуждения…
-    </div>
-  );
-}
-function Pager({
-  page,
-  total,
-  onPage,
-}: {
-  page: number;
-  total: number;
-  onPage: (n: number) => void;
-}) {
-  const last = Math.ceil(total / 20);
-  return last > 1 ? (
-    <nav className="pagination" aria-label="Страницы">
-      <button
-        className="button ghost small"
-        disabled={page <= 1}
-        onClick={() => onPage(page - 1)}
-      >
-        <ChevronLeft size={16} />
-        Назад
-      </button>
-      <span>
-        {page} / {last}
-      </span>
-      <button
-        className="button ghost small"
-        disabled={page >= last}
-        onClick={() => onPage(page + 1)}
-      >
-        Далее
-        <ChevronRight size={16} />
-      </button>
-    </nav>
-  ) : null;
-}
-function Modal({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const d = ref.current!;
-    d.showModal();
-    return () => d.close();
-  }, []);
-  return (
-    <dialog
-      ref={ref}
-      onCancel={onClose}
-      onClick={(e) => {
-        if (e.target === ref.current) onClose();
-      }}
-    >
-      <div className="dialog-heading">
-        <h2>{title}</h2>
-        <button className="icon-button" aria-label="Закрыть" onClick={onClose}>
-          <X />
-        </button>
-      </div>
-      {children}
-    </dialog>
-  );
-}
-function Count({ text, max }: { text: string; max: number }) {
-  return (
-    <span
-      className={"counter " + (Array.from(text).length > max ? "over" : "")}
-    >
-      {Array.from(text).length} / {max}
-    </span>
-  );
-}
-function Brand() {
-  return (
-    <Link className="brand" to="/" aria-label="Без имени — главная">
-      <span className="brand-mark">
-        <MessagesSquare size={26} />
-      </span>
-      <span>
-        без имени<span className="brand-sub">анонимный форум</span>
-      </span>
-    </Link>
-  );
-}
 export default function App() {
-  const [session, setSession] = useState<Session>({
-      active: false,
-      csrf_token: "",
-      staff: null,
-    }),
-    [version, setVersion] = useState(0),
-    [toast, setToast] = useState(""),
-    [menu, setMenu] = useState(false),
-    [sessionModal, setSessionModal] = useState(false),
-    [sessionError, setSessionError] = useState("");
-  const sectionsLoad = useLoad<{ items: Section[] }>("/sections", version),
-    location = useLocation();
-  useEffect(() => {
-    let active = true;
-    api<Session>("/session")
-      .then((s) => {
-        if (active) setSession(s);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
-  useEffect(() => {
-    setMenu(false);
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(""), 5000);
-    return () => clearTimeout(t);
-  }, [toast]);
-  const ensureSession = async () => {
-    const s = await api<Session>("/sessions", { method: "POST" });
-    setSession(s);
-    return s;
-  };
-  const sections = sectionsLoad.data?.items ?? [];
-  const endSession = async () => {
-    try {
-      await api("/session", mutation("DELETE", undefined, session.csrf_token));
-      setSession({ ...session, active: false, csrf_token: "" });
-      setSessionModal(false);
-      setVersion((v) => v + 1);
-      setToast("Анонимная сессия завершена.");
-    } catch (e) {
-      setSessionError(message(e));
-    }
-  };
+  const location = useLocation();
   return (
-    <Context.Provider
-      value={{
-        session,
-        setSession,
-        ensureSession,
-        sections,
-        version,
-        refresh: () => setVersion((v) => v + 1),
-        notify: setToast,
-      }}
-    >
-      <a className="skip" href="#main">
-        К содержимому
-      </a>
-      <div className="app-shell">
-        <aside className={"sidebar " + (menu ? "is-open" : "")}>
-          <div className="sidebar-top">
-            <Brand />
-            <button
-              className="icon-button mobile-only"
-              onClick={() => setMenu(false)}
-              aria-label="Закрыть меню"
-            >
-              <X />
-            </button>
-          </div>
-          <p className="nav-label">ПРОСТРАНСТВО</p>
-          <NavLink
-            className={
-              "nav-item " +
-              (location.search.includes("section_id=") ? "not-selected" : "")
-            }
-            end
-            to="/"
-          >
-            <Compass size={20} />
-            Все обсуждения
-          </NavLink>
-          <p className="nav-label sections-label">
-            РАЗДЕЛЫ <span>{sections.length}</span>
-          </p>
-          <nav aria-label="Разделы">
-            {sections.map((s) => (
-              <NavLink
-                key={s.id}
-                className={
-                  "nav-item " +
-                  (location.search.includes(s.id) ? "selected" : "")
-                }
-                to={"/?section_id=" + s.id}
-              >
-                <SectionIcon slug={s.slug} />
-                <span>
-                  {s.title}
-                  {s.is_archived && <small> · архив</small>}
-                </span>
-                <span className="nav-count">{s.topic_count}</span>
-              </NavLink>
-            ))}
-          </nav>
-          <ErrorBox text={sectionsLoad.error} retry={sectionsLoad.reload} />
-          <div className="sidebar-bottom">
-            <div className="quiet-card">
-              <ShieldCheck size={22} />
-              <strong>Слова важнее имени</strong>
-              <p>Для разговора не нужны профиль, почта или телефон.</p>
-              <Link to="/about">
-                Как это работает <ArrowRight size={14} />
-              </Link>
-            </div>
-            <NavLink className="nav-item muted" to="/rules">
-              <BookOpen size={18} />
-              Правила общения
-            </NavLink>
-            <NavLink
-              className="nav-item muted"
-              to={session.staff ? "/moderation" : "/login"}
-            >
-              <Shield size={18} />
-              {session.staff ? "Модерация" : "Вход для команды"}
-            </NavLink>
-            <div className="sidebar-footer">
-              Без имени · 2026 <span>Будь собой.</span>
-            </div>
-          </div>
-        </aside>
-        {menu && (
-          <button
-            className="menu-scrim"
-            onClick={() => setMenu(false)}
-            aria-label="Закрыть меню"
+    <AppProvider>
+      <AppLayout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/new" element={<NewTopic />} />
+          <Route
+            path="/topics/:id"
+            element={<TopicPage key={location.pathname} />}
           />
-        )}
-        <div className="workspace">
-          <header className="topbar">
-            <div className="topbar-left">
-              <button
-                className="icon-button mobile-only"
-                aria-label="Открыть меню"
-                onClick={() => setMenu(true)}
-              >
-                <Menu />
-              </button>
-              <span className="status-dot" />
-              Пространство открытого разговора
-            </div>
-            <button
-              className="session-pill"
-              onClick={() => {
-                setSessionError("");
-                setSessionModal(true);
-              }}
-            >
-              <span className="anon-avatar tiny">?</span>
-              <span>Вы — Аноним</span>
-              <ChevronRight size={15} />
-            </button>
-          </header>
-          <main id="main">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/new" element={<NewTopic />} />
-              <Route
-                path="/topics/:id"
-                element={<TopicPage key={location.pathname} />}
-              />
-              <Route path="/login" element={<Login />} />
-              <Route path="/moderation" element={<Moderation />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/rules" element={<InfoPage />} />
-              <Route path="/about" element={<InfoPage about />} />
-              <Route
-                path="*"
-                element={
-                  <Empty title="Такой страницы нет">
-                    <Link to="/">Вернуться к обсуждениям</Link>
-                  </Empty>
-                }
-              />
-            </Routes>
-          </main>
-          <footer className="page-footer">
-            <span>Открытый разговор. Простые правила.</span>
-            <Link to="/about">
-              Об анонимности <ArrowRight size={13} />
-            </Link>
-          </footer>
-        </div>
-      </div>
-      {toast && (
-        <div className="toast" role="status">
-          <Check size={18} />
-          {toast}
-          <button aria-label="Закрыть уведомление" onClick={() => setToast("")}>
-            <X size={16} />
-          </button>
-        </div>
-      )}
-      {sessionModal && (
-        <Modal
-          title="Ваша анонимная сессия"
-          onClose={() => setSessionModal(false)}
-        >
-          <p className="muted-text">
-            Сессия создаётся при первой публикации и действует 30 дней. Только в
-            этом браузере вы можете удалять свои сообщения.
-          </p>
-          <p className="notice">
-            После завершения сессии вы потеряете возможность удалять прежние
-            публикации. Сами сообщения останутся в обсуждениях.
-          </p>
-          <ErrorBox text={sessionError} />
-          <div className="dialog-actions">
-            <button
-              className="button ghost"
-              onClick={() => setSessionModal(false)}
-            >
-              Остаться
-            </button>
-            <button
-              className="button danger"
-              disabled={!session.active}
-              onClick={endSession}
-            >
-              <LogOut size={16} />
-              Завершить сессию
-            </button>
-          </div>
-        </Modal>
-      )}
-    </Context.Provider>
+          <Route path="/login" element={<Login />} />
+          <Route path="/moderation" element={<Moderation />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/rules" element={<InfoPage />} />
+          <Route path="/about" element={<InfoPage about />} />
+          <Route
+            path="*"
+            element={
+              <Empty title="Такой страницы нет">
+                <Link to="/">Вернуться к обсуждениям</Link>
+              </Empty>
+            }
+          />
+        </Routes>
+      </AppLayout>
+    </AppProvider>
   );
 }
+
 function Home() {
   const { sections, version } = useApp();
   const [params, setParams] = useSearchParams();
@@ -707,6 +340,7 @@ function Home() {
     </div>
   );
 }
+
 function TopicRow({ topic: t }: { topic: Topic }) {
   return (
     <article className="topic-row">
@@ -760,6 +394,7 @@ function TopicRow({ topic: t }: { topic: Topic }) {
     </article>
   );
 }
+
 function NewTopic() {
   const { sections, ensureSession, refresh, notify } = useApp(),
     navigate = useNavigate(),
@@ -893,6 +528,7 @@ function NewTopic() {
     </div>
   );
 }
+
 function TopicPage() {
   const { id } = useParams();
   const { version, session, ensureSession, refresh, notify } = useApp();
@@ -1117,6 +753,7 @@ function TopicPage() {
     </div>
   );
 }
+
 function ReportModal({ post, onClose }: { post: Post; onClose: () => void }) {
   const { ensureSession, notify } = useApp();
   const [reason, setReason] = useState("spam"),
@@ -1189,6 +826,7 @@ function ReportModal({ post, onClose }: { post: Post; onClose: () => void }) {
     </Modal>
   );
 }
+
 function ConfirmDelete({ post, onClose }: { post: Post; onClose: () => void }) {
   const { session, refresh, notify } = useApp();
   const [error, setError] = useState(""),
@@ -1230,6 +868,7 @@ function ConfirmDelete({ post, onClose }: { post: Post; onClose: () => void }) {
     </Modal>
   );
 }
+
 function ReasonModal({
   title,
   label,
@@ -1285,6 +924,7 @@ function ReasonModal({
     </Modal>
   );
 }
+
 function Login() {
   const { session, setSession, notify } = useApp();
   const [login, setLogin] = useState(""),
@@ -1370,6 +1010,7 @@ function Login() {
     </div>
   );
 }
+
 function StaffHeader({ admin = false }: { admin?: boolean }) {
   const { session, setSession, notify } = useApp();
   const [error, setError] = useState("");
@@ -1426,6 +1067,7 @@ function StaffHeader({ admin = false }: { admin?: boolean }) {
     </>
   );
 }
+
 function Moderation() {
   const { session } = useApp();
   return !session.staff ? (
@@ -1440,6 +1082,7 @@ function Moderation() {
     <ModerationContent />
   );
 }
+
 function ModerationContent() {
   const { session, version, refresh, notify } = useApp();
   const [tab, setTab] = useState("open"),
@@ -1616,6 +1259,7 @@ function ModerationContent() {
     </div>
   );
 }
+
 function Admin() {
   const { session } = useApp();
   return session.staff?.role !== "admin" ? (
@@ -1628,6 +1272,7 @@ function Admin() {
     <AdminContent />
   );
 }
+
 function AdminContent() {
   const { sections, session, refresh, version, notify, setSession } = useApp();
   const staff = useLoad<{ items: Staff[] }>("/admin/staff", version);
@@ -1763,6 +1408,7 @@ function AdminContent() {
     </div>
   );
 }
+
 function SectionModal({
   section,
   onClose,
@@ -1861,6 +1507,7 @@ function SectionModal({
     </Modal>
   );
 }
+
 function StaffModal({ onClose }: { onClose: () => void }) {
   const { session, refresh, notify } = useApp();
   const [form, setForm] = useState({
@@ -1939,6 +1586,7 @@ function StaffModal({ onClose }: { onClose: () => void }) {
     </Modal>
   );
 }
+
 function InfoPage({ about = false }: { about?: boolean }) {
   const rules = [
     [
