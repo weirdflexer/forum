@@ -1,11 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 import {
-BookOpen,
-Code2,
-Hash,
-Heart,
-Lightbulb,
-MessagesSquare,
+  BookOpen,
+  Code2,
+  Hash,
+  Heart,
+  Lightbulb,
+  MessagesSquare,
 } from "lucide-react";
 
 const icons: Record<string, LucideIcon> = {

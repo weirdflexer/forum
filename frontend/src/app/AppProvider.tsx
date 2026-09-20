@@ -1,13 +1,13 @@
-import type { Dispatch,ReactNode,SetStateAction } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import {
-createContext,
-useCallback,
-useContext,
-useEffect,
-useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 import { api } from "../api/client";
-import type { Section,Session } from "../api/types";
+import type { Section, Session } from "../api/types";
 import { useLoad } from "../hooks/useLoad";
 
 type AppContextValue = {

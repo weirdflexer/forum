@@ -40,7 +40,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMenu(false);
     window.scrollTo(0, 0);
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
   const endSession = async () => {
     try {
       await api("/session", mutation("DELETE", undefined, session.csrf_token));

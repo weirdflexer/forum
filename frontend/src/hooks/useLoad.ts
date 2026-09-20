@@ -1,27 +1,53 @@
-import { useEffect,useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import { message } from "../lib/errors";
 
-export function useLoad<T>(path: string, version = 0) {
-  const [data, setData] = useState<T | null>(null),
-    [error, setError] = useState(""),
-    [loading, setLoading] = useState(true),
-    [retry, setRetry] = useState(0);
+type LoadState<T> = {
+  path: string | null;
+  data: T | null;
+  error: string;
+  loading: boolean;
+};
+
+// A null path disables loading; old requests cannot update a different page.
+export function useLoad<T>(path: string | null, version = 0) {
+  const [state, setState] = useState<LoadState<T>>({
+    path: null,
+    data: null,
+    error: "",
+    loading: false,
+  });
+  const [retry, setRetry] = useState(0);
+  const reload = useCallback(() => setRetry((retry) => retry + 1), []);
   useEffect(() => {
-    const c = new AbortController();
-    setLoading(true);
-    setError("");
-    api<T>(path, { signal: c.signal })
-      .then((d) => {
-        if (!c.signal.aborted) setData(d);
+    if (path === null) return;
+    const controller = new AbortController();
+    setState((previous) => ({
+      path,
+      data: previous.path === path ? previous.data : null,
+      error: "",
+      loading: true,
+    }));
+    api<T>(path, { signal: controller.signal })
+      .then((data) => {
+        if (!controller.signal.aborted)
+          setState({ path, data, error: "", loading: false });
       })
-      .catch((e) => {
-        if (!c.signal.aborted) setError(message(e));
-      })
-      .finally(() => {
-        if (!c.signal.aborted) setLoading(false);
+      .catch((error) => {
+        if (!controller.signal.aborted)
+          setState((previous) => ({
+            ...previous,
+            error: message(error),
+            loading: false,
+          }));
       });
-    return () => c.abort();
+    return () => controller.abort();
   }, [path, version, retry]);
-  return { data, error, loading, reload: () => setRetry((x) => x + 1) };
+  const current = path !== null && path === state.path;
+  return {
+    data: current ? state.data : null,
+    error: current ? state.error : "",
+    loading: path !== null && (!current || state.loading),
+    reload,
+  };
 }
