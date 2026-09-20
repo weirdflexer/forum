@@ -18,7 +18,7 @@ export function AdminPage() {
   return session.staff?.role !== "admin" ? (
     <div className="narrow-page">
       <Empty title="Доступ для администратора" icon={Shield}>
-        <Link to="/login">Служебный вход</Link>
+        <Link to="/">К обсуждениям</Link>
       </Empty>
     </div>
   ) : (

@@ -17,8 +17,8 @@ export function ModerationPage() {
   return !session.staff ? (
     <div className="narrow-page">
       <Empty title="Нужен служебный вход" icon={Shield}>
-        <Link to="/login" className="button primary">
-          Войти
+        <Link to="/" className="button primary">
+          К обсуждениям
         </Link>
       </Empty>
     </div>

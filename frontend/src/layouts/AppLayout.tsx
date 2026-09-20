@@ -118,13 +118,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <BookOpen size={18} />
               Правила общения
             </NavLink>
-            <NavLink
-              className="nav-item muted"
-              to={session.staff ? "/moderation" : "/login"}
-            >
-              <Shield size={18} />
-              {session.staff ? "Модерация" : "Вход для команды"}
-            </NavLink>
+            {session.staff && (
+              <NavLink className="nav-item muted" to="/moderation">
+                <Shield size={18} />
+                Модерация
+              </NavLink>
+            )}
             <div className="sidebar-footer">
               Без имени · 2026 <span>Будь собой.</span>
             </div>
